@@ -197,8 +197,10 @@ func (p *Proxy) allowed(r *Request) error {
 
 func (p *Proxy) invalidate(keys []string) {
 	for _, key := range keys {
+		p.Cache.Delete(key + "#")
+		p.Cache.Delete(key + "/")
+		p.Cache.Delete(key + "#0x0")
 		p.Cache.Delete(key)
-		p.Cache.Delete(strings.Replace(key, "#", "", 1))
 	}
 }
 
