@@ -22,6 +22,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -102,6 +103,23 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.URL.Path == "/invalidate" && r.Method == "PUT" {
+		var requestBody struct {
+			URLS []string `json:"urls"`
+		}
+
+		err := json.NewDecoder(r.Body).Decode(&requestBody)
+
+		if err != nil {
+			fmt.Fprint(w, "Failed to invlaidate cache, invalid request")
+			return
+		}
+
+		p.invalidate(requestBody.URLS)
+		fmt.Fprint(w, "OK")
+		return
+	}
+
 	req, err := NewRequest(r, p.DefaultBaseURL)
 	if err != nil {
 		msg := fmt.Sprintf("invalid request URL: %v", err)
@@ -175,6 +193,13 @@ func (p *Proxy) allowed(r *Request) error {
 	}
 
 	return fmt.Errorf("request does not contain an allowed host or valid signature: %v", r)
+}
+
+func (p *Proxy) invalidate(keys []string) {
+	for _, key := range keys {
+		p.Cache.Delete(key)
+		p.Cache.Delete(strings.Replace(key, "#", "", 1))
+	}
 }
 
 // validHost returns whether the host in u matches one of hosts.
