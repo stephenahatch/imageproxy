@@ -195,6 +195,7 @@ func (p *Proxy) allowed(r *Request) error {
 	return fmt.Errorf("request does not contain an allowed host or valid signature: %v", r)
 }
 
+// Invalidates cached items directly by key.  This function will try to also clean up associated cached items.
 func (p *Proxy) invalidate(keys []string) {
 	for _, key := range keys {
 		p.Cache.Delete(key + "#")
